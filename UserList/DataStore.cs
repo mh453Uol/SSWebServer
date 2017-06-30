@@ -2,9 +2,9 @@
 
 namespace UserList
 {
-    public static class DataStore
+    public class DataStore
     {
-        public static List<User> Users = new List<User>()
+        public List<User> Users = new List<User>()
         {
             new User()
             {

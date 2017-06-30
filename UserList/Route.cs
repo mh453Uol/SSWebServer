@@ -9,6 +9,5 @@ namespace UserList
         public string HttpMethod { get; set; }
         public Regex URLMatch { get; set; }
         public Func<HttpListenerRequest, HttpListenerResponse, HttpListenerResponse> Handler { get; set; }
-
     }
 }

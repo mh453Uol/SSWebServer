@@ -8,18 +8,18 @@ namespace UserList
 {
     public class WebServer
     {
-        public HttpListener listener;
-        public List<UriBuilder> uriPrefixes { get; set; }
-        public int port { get; set; }
-        public List<Route> routes { get; set; }
+        public HttpListener Listener;
+        public List<UriBuilder> UriPrefixes { get; set; }
+        public int Port { get; set; }
+        public RouteEngine RoutesManager { get; set; }
 
         public WebServer(string[] urlPrefixes, int port)
         {
-            this.port = port;
-            this.routes = new List<Route>();
-            this.uriPrefixes = new List<UriBuilder>();
-            this.uriPrefixes = ToUriBuilder(urlPrefixes);
-            listener = new HttpListener();
+            this.Port = port;
+            this.UriPrefixes = new List<UriBuilder>();
+            this.UriPrefixes = ToUriBuilder(urlPrefixes);
+            Listener = new HttpListener();
+            RoutesManager = new RouteEngine();
         }
 
         public void Start()
@@ -36,20 +36,20 @@ namespace UserList
             }
 
             // Add the prefixes for server to listen to.
-            foreach (UriBuilder prefix in uriPrefixes)
+            foreach (UriBuilder prefix in UriPrefixes)
             {
-                listener.Prefixes.Add(prefix.Uri.OriginalString);
+                Listener.Prefixes.Add(prefix.Uri.OriginalString);
             }
             // Start the web server
-            listener.Start();
-            Console.WriteLine("Listening on PORT: " + port + " URI: " + String.Join(",", uriPrefixes));
+            Listener.Start();
+            Console.WriteLine("Listening on PORT: " + Port + " URI: " + String.Join(",", UriPrefixes));
             HandleIncomingRequest();
         }
         public void HandleIncomingRequest()
         {
             ThreadPool.QueueUserWorkItem((obj) =>
             {
-                while (listener.IsListening)
+                while (Listener.IsListening)
                 {
                     ThreadPool.QueueUserWorkItem((context) =>
                     {
@@ -58,14 +58,20 @@ namespace UserList
                         var request = HttpContext.Request;
                         var response = HttpContext.Response;
 
-                        var route = routes.FirstOrDefault(r => r.HttpMethod == request.HttpMethod &&
+                        var route = RoutesManager.Routes.FirstOrDefault(r => r.HttpMethod == request.HttpMethod &&
                             r.URLMatch.Match(request.Url.AbsolutePath).Success);
 
-                        var generatedResponse = route.Handler(request, response);
+                        if (route == null)
+                        {
+                            //Route not defined display a error message
+                            RoutesManager.NotDefinedRoute.Handler(request, response);
+                        }
+                        else
+                        {
+                            route.Handler(request, response);
+                        }
 
-                        response.OutputStream.Close();
-
-                    }, listener.GetContext());
+                    }, Listener.GetContext());
                 }
             });
         }
@@ -73,7 +79,7 @@ namespace UserList
         public bool IsPrefixesValid()
         {
             // URI prefixes are required, since the server need to listen to a uri
-            if (uriPrefixes.Any(u => string.IsNullOrEmpty(u.Uri.AbsolutePath)))
+            if (UriPrefixes.Any(u => string.IsNullOrEmpty(u.Uri.AbsolutePath)))
             {
                 return false;
             }
@@ -87,7 +93,7 @@ namespace UserList
             foreach (var url in urlPrefixes)
             {
                 var eachUrl = new UriBuilder(url);
-                eachUrl.Port = port;
+                eachUrl.Port = Port;
 
                 urls.Add(eachUrl);
             }
@@ -97,8 +103,8 @@ namespace UserList
 
         public void Stop()
         {
-            listener.Stop();
-            listener.Close();
+            Listener.Stop();
+            Listener.Close();
         }
     }
 }

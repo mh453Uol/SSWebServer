@@ -14,7 +14,7 @@
         {
             OK = 200,
             BADREQUEST = 400,
-            NOTFOUND = 405
+            NOTFOUND = 404
         }
 
         public static string[] SplitURL(string url)
