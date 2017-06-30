@@ -1,18 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using UserList;
 
-namespace UserList
+namespace TestUserList
 {
     class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             DataStore data = new DataStore();
+
+            WebServer server = SetUpServer(data);
+            server.Start();
+
+            User user = data.Users[0];
+
+            string baseUrl = "http://localhost:8090";
+
+            HttpClient client = new HttpClient();
+
+            var testOne = new Test(baseUrl);
+            var testTwo = new Test(baseUrl);
+
+            testOne.Client = client;
+            testTwo.Client = client;
+
+            Task task = MainAsync(testOne, testTwo, user);
+            task.Wait();
+        }
+
+        static async Task MainAsync(Test t1, Test t2, User user)
+        {
+            var t1UserRequest = t1.GetUser(user.Name);
+
+            var t2UserRequest = t2.GetUser(user.Name);
+
+            var t1UserResponse = await t1UserRequest;
+
+            var t2UserResponse = await t2UserRequest;
+
+            Log(t1UserResponse);
+
+            Log(t2UserResponse);
+        }
+
+        public static WebServer SetUpServer(DataStore data)
+        {
             WebServer server = new WebServer(new String[] { "http://localhost:" }, 8090);
 
-            // Set up routes
             server.RoutesManager.Routes.AddRange(new List<Route>
             {
                 new Route()
@@ -141,7 +180,6 @@ namespace UserList
                 }
             });
 
-            // Set up a route which gets called when no routes can be matched.
             server.RoutesManager.NotDefinedRoute = new Route()
             {
                 HttpMethod = Helper.HTTPMethod.GET,
@@ -157,10 +195,13 @@ namespace UserList
                 }
             };
 
-            server.Start();
-            Console.WriteLine("A simple webserver. Press a key to quit.");
-            Console.ReadKey();
-            server.Stop();
+            return server;
+        }
+        public static void Log(HttpResponseMessage response)
+        {
+            Console.WriteLine("----------------------------------");
+            Console.WriteLine(String.Format("Request {0} -> Response : {1} -> Success: {2}",
+                response.RequestMessage.RequestUri, response.Content.ReadAsStringAsync().Result, response.IsSuccessStatusCode));
         }
     }
 }

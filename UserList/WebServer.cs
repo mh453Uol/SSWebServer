@@ -58,6 +58,8 @@ namespace UserList
                         var request = HttpContext.Request;
                         var response = HttpContext.Response;
 
+                        // Find a route which match the incoming request
+
                         var route = RoutesManager.Routes.FirstOrDefault(r => r.HttpMethod == request.HttpMethod &&
                             r.URLMatch.Match(request.Url.AbsolutePath).Success);
 

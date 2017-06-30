@@ -4,6 +4,7 @@ namespace UserList
 {
     public class DataStore
     {
+        //Some random users
         public List<User> Users = new List<User>()
         {
             new User()

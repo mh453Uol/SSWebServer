@@ -13,6 +13,7 @@ namespace UserList
             NotDefinedRoute = new Route();
         }
 
+        // Construct a response for the request
         public void ConstructResponse(HttpListenerResponse response, string responseBody)
         {
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseBody);
